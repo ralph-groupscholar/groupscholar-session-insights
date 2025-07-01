@@ -1,0 +1,93 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../src/lib.php';
+
+[$command, $options] = gssi_parse_args($argv);
+
+if ($command === 'help' || $command === '--help' || $command === '-h') {
+    echo gssi_help();
+    exit(0);
+}
+
+try {
+    $config = gssi_load_config();
+    $pdo = gssi_connect($config);
+} catch (Throwable $e) {
+    fwrite(STDERR, "Database configuration error: {$e->getMessage()}\n");
+    exit(1);
+}
+
+if ($command === 'add') {
+    $required = ['scholar', 'coach', 'summary', 'next'];
+    foreach ($required as $field) {
+        if (empty($options[$field])) {
+            fwrite(STDERR, "Missing required option --{$field}\n");
+            exit(1);
+        }
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO gs_session_insights.session_logs (scholar_name, coach_name, session_date, summary, action_items, tags, status)'
+        . ' VALUES (:scholar, :coach, :session_date, :summary, :action_items, :tags, :status)'
+        . ' RETURNING id'
+    );
+
+    $stmt->execute([
+        ':scholar' => $options['scholar'],
+        ':coach' => $options['coach'],
+        ':session_date' => $options['date'],
+        ':summary' => $options['summary'],
+        ':action_items' => $options['next'],
+        ':tags' => '{' . implode(',', $options['tags']) . '}',
+        ':status' => $options['status'],
+    ]);
+
+    $id = $stmt->fetchColumn();
+    echo "Saved session insight #{$id}.\n";
+    exit(0);
+}
+
+if ($command === 'list') {
+    $stmt = $pdo->prepare(
+        'SELECT id, scholar_name, coach_name, session_date, summary, action_items, tags, status'
+        . ' FROM gs_session_insights.session_logs'
+        . ' WHERE (:status IS NULL OR status = :status)'
+        . ' ORDER BY session_date DESC, id DESC'
+        . ' LIMIT :limit'
+    );
+
+    $status = $options['status'];
+    if ($status === '') {
+        $status = null;
+    }
+
+    $stmt->bindValue(':status', $status, $status === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $stmt->bindValue(':limit', (int)$options['limit'], PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+
+    echo gssi_render_list($rows);
+    exit(0);
+}
+
+if ($command === 'summary') {
+    $statusRows = $pdo->query(
+        'SELECT status, COUNT(*) AS count FROM gs_session_insights.session_logs GROUP BY status ORDER BY status'
+    )->fetchAll();
+
+    $tagRows = $pdo->query(
+        "SELECT tag, COUNT(*) AS count FROM ("
+        . " SELECT UNNEST(tags) AS tag FROM gs_session_insights.session_logs"
+        . ") AS t GROUP BY tag ORDER BY count DESC LIMIT 5"
+    )->fetchAll();
+
+    echo gssi_render_summary($statusRows, $tagRows);
+    exit(0);
+}
+
+fwrite(STDERR, "Unknown command: {$command}\n");
+fwrite(STDERR, gssi_help());
+exit(1);
