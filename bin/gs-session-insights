@@ -59,10 +59,7 @@ if ($command === 'list') {
         . ' LIMIT :limit'
     );
 
-    $status = $options['status'];
-    if ($status === '') {
-        $status = null;
-    }
+    $status = gssi_normalize_status($options['status']);
 
     $stmt->bindValue(':status', $status, $status === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
     $stmt->bindValue(':limit', (int)$options['limit'], PDO::PARAM_INT);
@@ -85,6 +82,29 @@ if ($command === 'summary') {
     )->fetchAll();
 
     echo gssi_render_summary($statusRows, $tagRows);
+    exit(0);
+}
+
+if ($command === 'coach-summary') {
+    $stmt = $pdo->prepare(
+        'SELECT coach_name, COUNT(*) AS total,'
+        . " SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,"
+        . ' MAX(session_date) AS last_session'
+        . ' FROM gs_session_insights.session_logs'
+        . ' WHERE (:status IS NULL OR status = :status)'
+        . ' GROUP BY coach_name'
+        . ' ORDER BY open_count DESC, total DESC, coach_name'
+        . ' LIMIT :limit'
+    );
+
+    $status = gssi_normalize_status($options['status']);
+
+    $stmt->bindValue(':status', $status, $status === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $stmt->bindValue(':limit', (int)$options['limit'], PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+
+    echo gssi_render_coach_summary($rows);
     exit(0);
 }
 

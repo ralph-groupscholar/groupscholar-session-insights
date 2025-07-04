@@ -39,6 +39,8 @@ php scripts/setup_db.php
 ./bin/gs-session-insights list --status open --limit 10
 
 ./bin/gs-session-insights summary
+
+./bin/gs-session-insights coach-summary --status all --limit 10
 ```
 
 ### Tests

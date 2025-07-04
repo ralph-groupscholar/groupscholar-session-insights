@@ -38,6 +38,11 @@ run_test('parse args defaults date and status', function (): void {
     expect($opts['date'] !== null, 'Date should be set');
 });
 
+run_test('normalize status handles all', function (): void {
+    expect(gssi_normalize_status('all') === null, 'Status all should normalize to null');
+    expect(gssi_normalize_status('OPEN') === 'open', 'Status should be lowercased');
+});
+
 run_test('render summary formats output', function (): void {
     $summary = gssi_render_summary([
         ['status' => 'open', 'count' => 2],
@@ -49,6 +54,15 @@ run_test('render summary formats output', function (): void {
     expect(str_contains($summary, 'Session Insight Summary'), 'Missing header');
     expect(str_contains($summary, 'open: 2'), 'Missing open count');
     expect(str_contains($summary, 'fafsa: 2'), 'Missing tag count');
+});
+
+run_test('render coach summary formats output', function (): void {
+    $summary = gssi_render_coach_summary([
+        ['coach_name' => 'Morgan Reid', 'total' => 3, 'open_count' => 2, 'last_session' => '2026-02-05'],
+    ]);
+
+    expect(str_contains($summary, 'Coach Summary'), 'Missing coach summary header');
+    expect(str_contains($summary, 'Morgan Reid | total 3 | open 2 | last 2026-02-05'), 'Missing coach row');
 });
 
 echo "All tests passed.\n";

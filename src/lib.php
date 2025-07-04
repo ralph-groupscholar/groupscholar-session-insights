@@ -102,6 +102,18 @@ function gssi_parse_tags(string $raw): array
     return array_values(array_unique($tags));
 }
 
+function gssi_normalize_status(?string $status): ?string
+{
+    if ($status === null) {
+        return null;
+    }
+    $normalized = strtolower(trim($status));
+    if ($normalized === '' || $normalized === 'all') {
+        return null;
+    }
+    return $normalized;
+}
+
 function gssi_format_tags(array $tags): string
 {
     if (count($tags) === 0) {
@@ -157,6 +169,27 @@ function gssi_render_summary(array $statusCounts, array $tagCounts): string
     return implode("\n", $lines) . "\n";
 }
 
+function gssi_render_coach_summary(array $rows): string
+{
+    if (count($rows) === 0) {
+        return "No coach summary data available.\n";
+    }
+
+    $lines = ["Coach Summary"];
+    $lines[] = str_repeat('-', 13);
+    foreach ($rows as $row) {
+        $lines[] = sprintf(
+            "%s | total %d | open %d | last %s",
+            $row['coach_name'],
+            (int)$row['total'],
+            (int)$row['open_count'],
+            $row['last_session']
+        );
+    }
+
+    return implode("\n", $lines) . "\n";
+}
+
 function gssi_help(): string
 {
     return <<<TEXT
@@ -166,6 +199,7 @@ Usage:
   gs-session-insights add --scholar "Name" --coach "Name" --summary "Notes" --next "Action" --tags "tag,tag" [--date YYYY-MM-DD] [--status open|closed]
   gs-session-insights list [--status open|closed] [--limit N]
   gs-session-insights summary
+  gs-session-insights coach-summary [--status open|closed|all] [--limit N]
 
 Environment variables:
   GS_DB_HOST, GS_DB_PORT, GS_DB_NAME, GS_DB_USER, GS_DB_PASSWORD
