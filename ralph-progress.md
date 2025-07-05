@@ -9,3 +9,8 @@
 - Added coach-summary command with status filtering to surface coach-level workload and recency.
 - Introduced status normalization helper and expanded tests.
 - Updated README usage examples.
+
+## Iteration 86 (2026-02-08)
+- Added scholar-summary command to highlight per-scholar workload, last session date, and next action.
+- Expanded CLI rendering utilities and tests for scholar rollups.
+- Updated README usage to document the new summary view.

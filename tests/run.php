@@ -65,4 +65,20 @@ run_test('render coach summary formats output', function (): void {
     expect(str_contains($summary, 'Morgan Reid | total 3 | open 2 | last 2026-02-05'), 'Missing coach row');
 });
 
+run_test('render scholar summary formats output', function (): void {
+    $summary = gssi_render_scholar_summary([
+        [
+            'scholar_name' => 'Ari Lewis',
+            'total' => 2,
+            'open_count' => 1,
+            'last_session' => '2026-02-05',
+            'action_items' => 'Send transcript.',
+        ],
+    ]);
+
+    expect(str_contains($summary, 'Scholar Summary'), 'Missing scholar summary header');
+    expect(str_contains($summary, 'Ari Lewis | total 2 | open 1 | last 2026-02-05'), 'Missing scholar row');
+    expect(str_contains($summary, 'Next: Send transcript.'), 'Missing next action line');
+});
+
 echo "All tests passed.\n";

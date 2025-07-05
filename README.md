@@ -6,6 +6,7 @@ A lightweight PHP CLI that logs mentoring session insights, action items, and ta
 - Add new session insights with scholar, coach, summary, action items, status, and tags.
 - List recent sessions with consistent formatting for quick review.
 - Generate a summary view with status counts and top tags.
+- Produce coach and scholar rollups to prioritize follow-ups.
 - PostgreSQL-backed storage with seeded sample data for immediate usage.
 
 ## Getting Started
@@ -41,6 +42,8 @@ php scripts/setup_db.php
 ./bin/gs-session-insights summary
 
 ./bin/gs-session-insights coach-summary --status all --limit 10
+
+./bin/gs-session-insights scholar-summary --status open --limit 10
 ```
 
 ### Tests

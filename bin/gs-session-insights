@@ -108,6 +108,39 @@ if ($command === 'coach-summary') {
     exit(0);
 }
 
+if ($command === 'scholar-summary') {
+    $stmt = $pdo->prepare(
+        'WITH latest AS ('
+        . ' SELECT DISTINCT ON (scholar_name) scholar_name, action_items, session_date'
+        . ' FROM gs_session_insights.session_logs'
+        . ' WHERE (:status IS NULL OR status = :status)'
+        . ' ORDER BY scholar_name, session_date DESC, id DESC'
+        . '), summary AS ('
+        . ' SELECT scholar_name, COUNT(*) AS total,'
+        . " SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open_count,"
+        . ' MAX(session_date) AS last_session'
+        . ' FROM gs_session_insights.session_logs'
+        . ' WHERE (:status IS NULL OR status = :status)'
+        . ' GROUP BY scholar_name'
+        . ')'
+        . ' SELECT summary.scholar_name, summary.total, summary.open_count, summary.last_session, latest.action_items'
+        . ' FROM summary'
+        . ' JOIN latest ON latest.scholar_name = summary.scholar_name'
+        . ' ORDER BY summary.open_count DESC, summary.last_session DESC, summary.scholar_name'
+        . ' LIMIT :limit'
+    );
+
+    $status = gssi_normalize_status($options['status']);
+
+    $stmt->bindValue(':status', $status, $status === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $stmt->bindValue(':limit', (int)$options['limit'], PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+
+    echo gssi_render_scholar_summary($rows);
+    exit(0);
+}
+
 fwrite(STDERR, "Unknown command: {$command}\n");
 fwrite(STDERR, gssi_help());
 exit(1);

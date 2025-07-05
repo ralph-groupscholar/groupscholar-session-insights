@@ -190,6 +190,28 @@ function gssi_render_coach_summary(array $rows): string
     return implode("\n", $lines) . "\n";
 }
 
+function gssi_render_scholar_summary(array $rows): string
+{
+    if (count($rows) === 0) {
+        return "No scholar summary data available.\n";
+    }
+
+    $lines = ["Scholar Summary"];
+    $lines[] = str_repeat('-', 14);
+    foreach ($rows as $row) {
+        $lines[] = sprintf(
+            "%s | total %d | open %d | last %s",
+            $row['scholar_name'],
+            (int)$row['total'],
+            (int)$row['open_count'],
+            $row['last_session']
+        );
+        $lines[] = "  Next: {$row['action_items']}";
+    }
+
+    return implode("\n", $lines) . "\n";
+}
+
 function gssi_help(): string
 {
     return <<<TEXT
@@ -200,6 +222,7 @@ Usage:
   gs-session-insights list [--status open|closed] [--limit N]
   gs-session-insights summary
   gs-session-insights coach-summary [--status open|closed|all] [--limit N]
+  gs-session-insights scholar-summary [--status open|closed|all] [--limit N]
 
 Environment variables:
   GS_DB_HOST, GS_DB_PORT, GS_DB_NAME, GS_DB_USER, GS_DB_PASSWORD
